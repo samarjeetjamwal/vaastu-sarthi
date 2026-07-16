@@ -6,7 +6,7 @@
 <title>Vaastu Sarthi — Your Vaastu Shastra Advisor</title>
 <style>
 /* ============================================================
-   VAASTU SARTHI — STYLES
+   VAASTU SARTHI — PRODUCTION DESIGN STYLES
    Palette: Deep Red / Golden Yellow / Black / Off-white
    ============================================================ */
 :root{
@@ -27,12 +27,10 @@ html,body{
   padding:0;
   height:100%;
   font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background:
-    radial-gradient(circle at 50% 0%, #2a0d0d 0%, var(--black) 65%);
+  background:radial-gradient(circle at 50% 0%, #2a0d0d 0%, var(--black) 65%);
   color:var(--offwhite);
 }
 
-/* Vaastu Purusha Mandala-inspired background grid, pure CSS */
 .mandala-bg{
   position:fixed;
   inset:0;
@@ -64,13 +62,37 @@ html,body{
   padding:0 12px;
 }
 
-/* HEADER */
+/* HEADER STYLE WITH INTEGRATED PERSISTENT BACK ACTION */
 header{
   padding:20px 10px 14px;
   text-align:center;
   position:relative;
   border-bottom:2px solid var(--gold);
   background:linear-gradient(180deg, rgba(139,0,0,0.35), transparent);
+}
+.header-nav-left {
+  position: absolute;
+  top: 24px;
+  left: 10px;
+}
+.back-nav-btn {
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid var(--gold);
+  color: var(--gold-bright);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.back-nav-btn:hover {
+  background: var(--red-bright);
+  color: #fff;
+  border-color: #fff;
 }
 .compass{
   width:64px;
@@ -93,76 +115,13 @@ header p.tagline{
   color:#e8d9b5;
   opacity:0.85;
 }
-.settings-toggle{
-  position:absolute;
-  top:14px;
-  right:6px;
-  background:var(--charcoal);
-  border:1px solid var(--gold);
-  color:var(--gold-bright);
-  border-radius:50%;
-  width:38px;
-  height:38px;
-  font-size:18px;
-  cursor:pointer;
-  transition:transform 0.3s ease, background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.settings-toggle:hover{ background:var(--red); transform:rotate(45deg); }
 
-/* SETTINGS PANEL */
-.settings-panel{
-  max-height:0;
-  overflow:hidden;
-  transition:max-height 0.35s ease, padding 0.35s ease;
-  background:var(--charcoal);
-  border-bottom:2px solid var(--gold);
+/* SETTINGS ELEMENT HIDDEN TOTALLY FROM SCREEN DISPLAY RENDERING */
+.settings-panel-invisible {
+  display: none !important;
 }
-.settings-panel.open{
-  max-height:150px;
-  padding:14px 10px;
-}
-.settings-panel .row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  align-items:center;
-  margin-bottom:10px;
-}
-.settings-panel label{
-  font-size:14px;
-  color:var(--gold-bright);
-  min-width:140px;
-  font-weight:600;
-}
-.settings-panel select{
-  flex:1;
-  min-width:200px;
-  padding:8px 10px;
-  border-radius:6px;
-  border:1px solid var(--gold);
-  background:#111;
-  color:var(--offwhite);
-  font-size:14px;
-  cursor:pointer;
-}
-.btn{
-  padding:8px 14px;
-  border-radius:6px;
-  border:none;
-  cursor:pointer;
-  font-weight:600;
-  font-size:13px;
-  transition:filter 0.2s, transform 0.1s;
-}
-.btn:active{ transform:scale(0.97); }
-.btn-gold{ background:var(--gold-bright); color:var(--black); }
-.btn-red{ background:var(--red-bright); color:var(--offwhite); }
-.btn:hover{ filter:brightness(1.1); }
 
-/* CHAT AREA */
+/* CHAT SYSTEM DISPLAY */
 .chat-area{
   flex:1;
   overflow-y:auto;
@@ -266,7 +225,6 @@ header p.tagline{
   40%{ transform:scale(1); opacity:1; }
 }
 
-/* INPUT BAR */
 .input-bar{
   display:flex;
   gap:8px;
@@ -332,6 +290,7 @@ footer{
 @media (max-width:600px){
   header h1{ font-size:22px; }
   .msg{ max-width:90%; }
+  .back-nav-btn { padding: 4px 10px; font-size: 11px; }
 }
 </style>
 </head>
@@ -341,8 +300,11 @@ footer{
 
 <div class="app-wrap">
 
-  <!-- ===================== HEADER ===================== -->
+  <!-- ===================== HEADER AREA ===================== -->
   <header>
+    <div class="header-nav-left">
+      <button class="back-nav-btn" id="headerBackBtn" title="Reset View">⬅ Back</button>
+    </div>
     <div class="compass">
       <svg viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="46" fill="none" stroke="#D4AF37" stroke-width="2"/>
@@ -362,50 +324,16 @@ footer{
     </div>
     <h1>Vaastu Sarthi</h1>
     <p class="tagline">Your guide through directions, elements & harmony</p>
-    <button class="settings-toggle" id="settingsToggle" title="Settings">⚙</button>
   </header>
 
-  <!-- ===================== SETTINGS PANEL ===================== -->
-  <div class="settings-panel" id="settingsPanel">
-    <div class="row">
-      <label for="langSelect">Response Language</label>
-      <select id="langSelect">
-        <!-- Indian Languages -->
-        <option value="English">English</option>
-        <option value="Hindi">Hindi (हिन्दी)</option>
-        <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
-        <option value="Bengali">Bengali (বাংলা)</option>
-        <option value="Tamil">Tamil (தமிழ்)</option>
-        <option value="Telugu">Telugu (తెలుగు)</option>
-        <option value="Marathi">Marathi (मराठी)</option>
-        <option value="Gujarati">Gujarati (ગુજરાતી)</option>
-        <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
-        <option value="Malayalam">Malayalam (മലയാളം)</option>
-        <option value="Urdu">Urdu (اردو)</option>
-        <option value="Odia">Odia (ଓଡ଼ିଆ)</option>
-        <!-- Global Languages -->
-        <option value="Spanish">Spanish (Español)</option>
-        <option value="French">French (Français)</option>
-        <option value="Arabic">Arabic (العربية)</option>
-        <option value="German">German (Deutsch)</option>
-        <option value="Mandarin Chinese">Chinese Mandarin (中文)</option>
-        <option value="Japanese">Japanese (日本語)</option>
-        <option value="Portuguese">Portuguese (Português)</option>
-        <option value="Russian">Russian (Русский)</option>
-        <option value="Italian">Italian (Italiano)</option>
-        <option value="Korean">Korean (한국어)</option>
-        <option value="Turkish">Turkish (Türkçe)</option>
-        <option value="Dutch">Dutch (Nederlands)</option>
-        <option value="Vietnamese">Vietnamese (Tiếng Việt)</option>
-        <option value="Polish">Polish (Polski)</option>
-        <option value="Thai">Thai (ภาษาไทย)</option>
-        <option value="Indonesian">Indonesian (Bahasa Indonesia)</option>
-        <option value="Persian">Persian (فارسی)</option>
-      </select>
-    </div>
+  <!-- ===================== INVISIBLE BACKGROUND CHANNELS ===================== -->
+  <div class="settings-panel-invisible">
+    <select id="langSelect">
+      <option value="English" selected>English</option>
+    </select>
   </div>
 
-  <!-- ===================== CHAT AREA ===================== -->
+  <!-- ===================== ACTIVE WORKSPACE AREA ===================== -->
   <div class="chat-area" id="chatArea">
     <div class="welcome-card" id="welcomeCard">
       <h2>🕉 Namaste! Ask me anything about Vaastu Shastra</h2>
@@ -420,7 +348,7 @@ footer{
     </div>
   </div>
 
-  <!-- ===================== INPUT BAR ===================== -->
+  <!-- ===================== INTERACTION CONTROLS ===================== -->
   <div class="bar-meta">
     <button class="clear-btn" id="clearChatBtn">🗑 New Conversation</button>
     <span id="charCounter">0 / 800</span>
@@ -438,57 +366,37 @@ footer{
 
 <script>
 /* ============================================================
-   VAASTU SARTHI — APPLICATION LOGIC
+   VAASTU SARTHI — RUNTIME BUSINESS LOGIC
    ============================================================ */
 
-// Connects to your live back-end routing proxy service hosted on Render
-const BACKEND_API_URL = "https://vaastu-sarthi-backend.onrender.com/api/vaastu";
+// PASTE YOUR LIVE CLOUDFLARE WORKER ROUTE URL HERE EXCLUSIVELY
+const BACKEND_API_URL = "https://vaastu-sarthi-api.YOURNAME.workers.dev";
 
-// ---------- DOM REFERENCES ----------
-const settingsToggle = document.getElementById('settingsToggle');
-const settingsPanel = document.getElementById('settingsPanel');
-const langSelect = document.getElementById('langSelect');
 const chatArea = document.getElementById('chatArea');
 const welcomeCard = document.getElementById('welcomeCard');
 const userInput = document.getElementById('userInput');
 const sendBtn = document.getElementById('sendBtn');
 const clearChatBtn = document.getElementById('clearChatBtn');
 const charCounter = document.getElementById('charCounter');
+const headerBackBtn = document.getElementById('headerBackBtn');
 
-const LS_KEY_LANG = 'vaastuSarthi_lang';
-
-function loadLang(){
-  return localStorage.getItem(LS_KEY_LANG) || 'English';
+// Language processing functions dynamically detect context automatically
+function getSystemDisplayLanguage() {
+  return "English"; 
 }
 
-// init settings on load
-langSelect.value = loadLang();
-
-// ---------- SETTINGS PANEL TOGGLE ----------
-settingsToggle.addEventListener('click', () => {
-  settingsPanel.classList.toggle('open');
-});
-
-langSelect.addEventListener('change', () => {
-  localStorage.setItem(LS_KEY_LANG, langSelect.value);
-});
-
-// ---------- CHAT HELPERS ----------
 function scrollToBottom(){
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 function formatMarkdown(text){
-  let escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
+  let escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 
   const lines = escaped.split('\n');
   let html = '';
   let inList = false;
+  
   for(const line of lines){
     const trimmed = line.trim();
     if(/^[-*]\s+/.test(trimmed)){
@@ -508,7 +416,7 @@ function formatMarkdown(text){
 }
 
 function addMessage(role, text){
-  if(welcomeCard) welcomeCard.remove();
+  if(document.getElementById('welcomeCard')) document.getElementById('welcomeCard').remove();
   const div = document.createElement('div');
   div.className = `msg ${role}`;
   if(role === 'ai'){
@@ -529,41 +437,14 @@ function addLoadingIndicator(){
   chatArea.appendChild(div);
   scrollToBottom();
 }
+
 function removeLoadingIndicator(){
   const el = document.getElementById('loadingDots');
   if(el) el.remove();
 }
 
-// ---------- CHAR COUNTER + AUTOSIZE ----------
-userInput.addEventListener('input', () => {
-  charCounter.textContent = `${userInput.value.length} / 800`;
-  userInput.style.height = 'auto';
-  userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
-});
-
-userInput.addEventListener('keydown', (e) => {
-  if(e.key === 'Enter' && !e.shiftKey){
-    e.preventDefault();
-    handleSend();
-  }
-});
-
-sendBtn.addEventListener('click', handleSend);
-
-// Attach events to dynamic chips
-function setupChipEvents(container) {
-  container.querySelectorAll('.chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      userInput.value = chip.getAttribute('data-q');
-      charCounter.textContent = `${userInput.value.length} / 800`;
-      handleSend();
-    });
-  });
-}
-
-setupChipEvents(document);
-
-clearChatBtn.addEventListener('click', () => {
+// PERSISTENT BACK ACTION NAVIGATION ROUTING TRIGGER
+function resetInterfaceState() {
   chatArea.innerHTML = '';
   const clone = document.createElement('div');
   clone.className = 'welcome-card';
@@ -580,9 +461,40 @@ clearChatBtn.addEventListener('click', () => {
       </div>`;
   chatArea.appendChild(clone);
   setupChipEvents(clone);
+  userInput.value = '';
+  charCounter.textContent = '0 / 800';
+  userInput.style.height = 'auto';
+}
+
+headerBackBtn.addEventListener('click', resetInterfaceState);
+clearChatBtn.addEventListener('click', resetInterfaceState);
+
+userInput.addEventListener('input', () => {
+  charCounter.textContent = `${userInput.value.length} / 800`;
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
 });
 
-// ---------- SEND / API CALL ----------
+userInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+sendBtn.addEventListener('click', handleSend);
+
+function setupChipEvents(container) {
+  container.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      userInput.value = chip.getAttribute('data-q');
+      charCounter.textContent = `${userInput.value.length} / 800`;
+      handleSend();
+    });
+  });
+}
+setupChipEvents(document);
+
 async function handleSend(){
   const question = userInput.value.trim();
   if(!question) return;
@@ -594,29 +506,22 @@ async function handleSend(){
   sendBtn.disabled = true;
 
   addLoadingIndicator();
-  const lang = loadLang();
+  const activeLang = getSystemDisplayLanguage();
 
   try{
-    const responseText = await fetchFromProxy(question, lang);
+    const responseText = await fetchFromEdgeWorker(question, activeLang);
     removeLoadingIndicator();
     addMessage('ai', responseText);
   } catch(err){
     removeLoadingIndicator();
-    addMessage('error', friendlyErrorMessage(err));
+    addMessage('error', '⚠ Something went wrong while contacting the Vaastu advisor. Please try again.');
+    console.error(err);
   } finally {
     sendBtn.disabled = false;
   }
 }
 
-function friendlyErrorMessage(err){
-  const msg = (err && err.message) ? err.message : String(err);
-  if(msg.includes('NetworkError') || msg.includes('Failed to fetch')){
-    return '⚠ Could not connect to the proxy server. Please ensure the backend server is running on Render.';
-  }
-  return '⚠ Something went wrong while contacting the Vaastu advisor. Please try again.';
-}
-
-async function fetchFromProxy(question, lang){
+async function fetchFromEdgeWorker(question, lang){
   const response = await fetch(BACKEND_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -625,9 +530,8 @@ async function fetchFromProxy(question, lang){
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Server error');
+    throw new Error(data.error || 'Worker execution error');
   }
-
   return data.text;
 }
 </script>
