@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vaastu Sarthi — Your Vaastu Shastra Advisor</title>
+<style>
+/* ============================================================
+   VAASTU SARTHI — STYLES
+   Palette: Deep Red / Golden Yellow / Black / Off-white
+   ============================================================ */
+:root{
+  --red:#8B0000;
+  --red-bright:#B71C1C;
+  --gold:#D4AF37;
+  --gold-bright:#FFC107;
+  --black:#0D0D0D;
+  --charcoal:#1A1A1A;
+  --offwhite:#FFF8E7;
+  --card:#231313;
+}
+
+*{box-sizing:border-box;}
+
+html,body{
+  margin:0;
+  padding:0;
+  height:100%;
+  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background:
+    radial-gradient(circle at 50% 0%, #2a0d0d 0%, var(--black) 65%);
+  color:var(--offwhite);
+}
+
+/* Vaastu Purusha Mandala-inspired background grid, pure CSS */
+.mandala-bg{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  opacity:0.07;
+  background-image:
+    linear-gradient(var(--gold) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gold) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+}
+.mandala-bg::after{
+  content:"";
+  position:absolute;
+  top:50%; left:50%;
+  width:600px; height:600px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  border:2px solid var(--gold);
+  border-radius:8px;
+  opacity:0.4;
+}
+
+.app-wrap{
+  max-width:900px;
+  margin:0 auto;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  padding:0 12px;
+}
+
+/* HEADER */
+header{
+  padding:20px 10px 14px;
+  text-align:center;
+  position:relative;
+  border-bottom:2px solid var(--gold);
+  background:linear-gradient(180deg, rgba(139,0,0,0.35), transparent);
+}
+.compass{
+  width:64px;
+  height:64px;
+  margin:0 auto 8px;
+  position:relative;
+}
+.compass svg{ width:100%; height:100%; }
+header h1{
+  margin:0;
+  font-size:28px;
+  letter-spacing:1px;
+  color:var(--gold-bright);
+  text-shadow:0 0 12px rgba(212,175,55,0.4);
+  font-weight:700;
+}
+header p.tagline{
+  margin:4px 0 0;
+  font-size:13px;
+  color:#e8d9b5;
+  opacity:0.85;
+}
+.settings-toggle{
+  position:absolute;
+  top:14px;
+  right:6px;
+  background:var(--charcoal);
+  border:1px solid var(--gold);
+  color:var(--gold-bright);
+  border-radius:50%;
+  width:38px;
+  height:38px;
+  font-size:18px;
+  cursor:pointer;
+  transition:transform 0.3s ease, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.settings-toggle:hover{ background:var(--red); transform:rotate(45deg); }
+
+/* SETTINGS PANEL */
+.settings-panel{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height 0.35s ease, padding 0.35s ease;
+  background:var(--charcoal);
+  border-bottom:2px solid var(--gold);
+}
+.settings-panel.open{
+  max-height:150px;
+  padding:14px 10px;
+}
+.settings-panel .row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.settings-panel label{
+  font-size:14px;
+  color:var(--gold-bright);
+  min-width:140px;
+  font-weight:600;
+}
+.settings-panel select{
+  flex:1;
+  min-width:200px;
+  padding:8px 10px;
+  border-radius:6px;
+  border:1px solid var(--gold);
+  background:#111;
+  color:var(--offwhite);
+  font-size:14px;
+  cursor:pointer;
+}
+.btn{
+  padding:8px 14px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+  font-size:13px;
+  transition:filter 0.2s, transform 0.1s;
+}
+.btn:active{ transform:scale(0.97); }
+.btn-gold{ background:var(--gold-bright); color:var(--black); }
+.btn-red{ background:var(--red-bright); color:var(--offwhite); }
+.btn:hover{ filter:brightness(1.1); }
+
+/* CHAT AREA */
+.chat-area{
+  flex:1;
+  overflow-y:auto;
+  padding:18px 6px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.chat-area::-webkit-scrollbar{ width:8px; }
+.chat-area::-webkit-scrollbar-thumb{ background:var(--red); border-radius:4px; }
+
+.msg{
+  max-width:80%;
+  padding:12px 16px;
+  border-radius:14px;
+  line-height:1.5;
+  font-size:14.5px;
+  animation:fadeIn 0.35s ease;
+  word-wrap:break-word;
+}
+@keyframes fadeIn{
+  from{ opacity:0; transform:translateY(8px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+.msg.user{
+  align-self:flex-end;
+  background:linear-gradient(135deg, var(--gold-bright), var(--gold));
+  color:var(--black);
+  border-bottom-right-radius:2px;
+  font-weight:500;
+}
+.msg.ai{
+  align-self:flex-start;
+  background:var(--card);
+  border-left:3px solid var(--red-bright);
+  border-bottom-left-radius:2px;
+  color:var(--offwhite);
+}
+.msg.error{
+  align-self:center;
+  background:#3a1414;
+  border:1px solid var(--red-bright);
+  color:#ffb3b3;
+  font-size:13.5px;
+}
+.msg.ai b{ color:var(--gold-bright); }
+
+.welcome-card{
+  align-self:center;
+  text-align:center;
+  padding:20px;
+  max-width:100%;
+}
+.welcome-card h2{
+  color:var(--gold-bright);
+  margin:0 0 8px;
+  font-size:20px;
+}
+.welcome-card p{
+  color:#e8d9b5;
+  font-size:14px;
+  margin:0 0 14px;
+}
+.chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:center;
+}
+.chip{
+  background:var(--charcoal);
+  border:1px solid var(--gold);
+  color:var(--offwhite);
+  padding:8px 12px;
+  border-radius:20px;
+  font-size:12.5px;
+  cursor:pointer;
+  transition:background 0.2s, color 0.2s;
+}
+.chip:hover{ background:var(--red-bright); color:#fff; }
+
+.loading-dots{
+  align-self:flex-start;
+  display:flex;
+  gap:5px;
+  padding:12px 16px;
+  background:var(--card);
+  border-left:3px solid var(--red-bright);
+  border-radius:14px;
+}
+.loading-dots span{
+  width:8px; height:8px;
+  border-radius:50%;
+  background:var(--gold-bright);
+  animation:bounce 1.2s infinite ease-in-out;
+}
+.loading-dots span:nth-child(2){ animation-delay:0.2s; }
+.loading-dots span:nth-child(3){ animation-delay:0.4s; }
+@keyframes bounce{
+  0%,80%,100%{ transform:scale(0.6); opacity:0.5; }
+  40%{ transform:scale(1); opacity:1; }
+}
+
+/* INPUT BAR */
+.input-bar{
+  display:flex;
+  gap:8px;
+  padding:12px 6px;
+  border-top:2px solid var(--gold);
+  background:linear-gradient(0deg, rgba(139,0,0,0.25), transparent);
+  align-items:flex-end;
+}
+.input-bar textarea{
+  flex:1;
+  resize:none;
+  border-radius:10px;
+  border:1px solid var(--gold);
+  background:#141010;
+  color:var(--offwhite);
+  padding:10px 12px;
+  font-size:14.5px;
+  font-family:inherit;
+  max-height:100px;
+  min-height:44px;
+}
+.input-bar textarea:focus{ outline:none; box-shadow:0 0 0 2px var(--gold-bright); }
+.send-btn{
+  background:var(--red-bright);
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  width:52px;
+  height:44px;
+  font-size:18px;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.send-btn:hover{ background:var(--red); }
+.send-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+.bar-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:0 8px;
+  font-size:11px;
+  color:#b3a37e;
+}
+.clear-btn{
+  background:none;
+  border:1px solid var(--gold);
+  color:var(--gold-bright);
+  border-radius:14px;
+  padding:4px 10px;
+  font-size:11px;
+  cursor:pointer;
+}
+.clear-btn:hover{ background:var(--charcoal); }
+
+footer{
+  text-align:center;
+  font-size:11px;
+  color:#8a7b5c;
+  padding:10px 14px 16px;
+}
+
+@media (max-width:600px){
+  header h1{ font-size:22px; }
+  .msg{ max-width:90%; }
+}
+</style>
+</head>
+<body>
+
+<div class="mandala-bg"></div>
+
+<div class="app-wrap">
+
+  <!-- ===================== HEADER ===================== -->
+  <header>
+    <div class="compass">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#D4AF37" stroke-width="2"/>
+        <circle cx="50" cy="50" r="30" fill="none" stroke="#B71C1C" stroke-width="1.5"/>
+        <g stroke="#D4AF37" stroke-width="1.5">
+          <line x1="50" y1="4" x2="50" y2="96"/>
+          <line x1="4" y1="50" x2="96" y2="50"/>
+          <line x1="17" y1="17" x2="83" y2="83"/>
+          <line x1="83" y1="17" x2="17" y2="83"/>
+        </g>
+        <circle cx="50" cy="50" r="4" fill="#FFC107"/>
+        <text x="50" y="14" text-anchor="middle" fill="#FFC107" font-size="8">N</text>
+        <text x="50" y="94" text-anchor="middle" fill="#FFC107" font-size="8">S</text>
+        <text x="10" y="53" text-anchor="middle" fill="#FFC107" font-size="8">W</text>
+        <text x="90" y="53" text-anchor="middle" fill="#FFC107" font-size="8">E</text>
+      </svg>
+    </div>
+    <h1>Vaastu Sarthi</h1>
+    <p class="tagline">Your guide through directions, elements & harmony</p>
+    <button class="settings-toggle" id="settingsToggle" title="Settings">⚙</button>
+  </header>
+
+  <!-- ===================== SETTINGS PANEL ===================== -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="row">
+      <label for="langSelect">Response Language</label>
+      <select id="langSelect">
+        <!-- Indian Languages -->
+        <option value="English">English</option>
+        <option value="Hindi">Hindi (हिन्दी)</option>
+        <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+        <option value="Bengali">Bengali (বাংলা)</option>
+        <option value="Tamil">Tamil (தமிழ்)</option>
+        <option value="Telugu">Telugu (తెలుగు)</option>
+        <option value="Marathi">Marathi (मराठी)</option>
+        <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+        <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
+        <option value="Malayalam">Malayalam (മലയാളം)</option>
+        <option value="Urdu">Urdu (اردو)</option>
+        <option value="Odia">Odia (ଓଡ଼ିଆ)</option>
+        <!-- Global Languages -->
+        <option value="Spanish">Spanish (Español)</option>
+        <option value="French">French (Français)</option>
+        <option value="Arabic">Arabic (العربية)</option>
+        <option value="German">German (Deutsch)</option>
+        <option value="Mandarin Chinese">Chinese Mandarin (中文)</option>
+        <option value="Japanese">Japanese (日本語)</option>
+        <option value="Portuguese">Portuguese (Português)</option>
+        <option value="Russian">Russian (Русский)</option>
+        <option value="Italian">Italian (Italiano)</option>
+        <option value="Korean">Korean (한국어)</option>
+        <option value="Turkish">Turkish (Türkçe)</option>
+        <option value="Dutch">Dutch (Nederlands)</option>
+        <option value="Vietnamese">Vietnamese (Tiếng Việt)</option>
+        <option value="Polish">Polish (Polski)</option>
+        <option value="Thai">Thai (ภาษาไทย)</option>
+        <option value="Indonesian">Indonesian (Bahasa Indonesia)</option>
+        <option value="Persian">Persian (فارسی)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ===================== CHAT AREA ===================== -->
+  <div class="chat-area" id="chatArea">
+    <div class="welcome-card" id="welcomeCard">
+      <h2>🕉 Namaste! Ask me anything about Vaastu Shastra</h2>
+      <p>Homes, offices, factories, construction, furniture placement, and remedies for doshas — I'm here to help.</p>
+      <div class="chips">
+        <div class="chip" data-q="Which direction should my main entrance face?">Main entrance direction?</div>
+        <div class="chip" data-q="What is the best placement for the kitchen in a house?">Best kitchen placement?</div>
+        <div class="chip" data-q="What is the remedy for a toilet located in the north-east corner?">Remedy for NE toilet?</div>
+        <div class="chip" data-q="Where should the pooja room be located in a home?">Pooja room placement?</div>
+        <div class="chip" data-q="What is the ideal direction for a study table or work desk?">Study table direction?</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== INPUT BAR ===================== -->
+  <div class="bar-meta">
+    <button class="clear-btn" id="clearChatBtn">🗑 New Conversation</button>
+    <span id="charCounter">0 / 800</span>
+  </div>
+  <div class="input-bar">
+    <textarea id="userInput" maxlength="800" placeholder="Ask about entrance direction, room placement, remedies..." rows="1"></textarea>
+    <button class="send-btn" id="sendBtn" title="Send">➤</button>
+  </div>
+
+  <footer>
+    This tool provides general Vaastu guidance and is not a substitute for consultation with a certified Vaastu expert or structural engineer.
+  </footer>
+
+</div>
+
+<script>
+/* ============================================================
+   VAASTU SARTHI — APPLICATION LOGIC
+   ============================================================ */
+
+// Connects to your live back-end routing proxy service hosted on Render
+const BACKEND_API_URL = "https://vaastu-sarthi-backend.onrender.com/api/vaastu";
+
+// ---------- DOM REFERENCES ----------
+const settingsToggle = document.getElementById('settingsToggle');
+const settingsPanel = document.getElementById('settingsPanel');
+const langSelect = document.getElementById('langSelect');
+const chatArea = document.getElementById('chatArea');
+const welcomeCard = document.getElementById('welcomeCard');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const clearChatBtn = document.getElementById('clearChatBtn');
+const charCounter = document.getElementById('charCounter');
+
+const LS_KEY_LANG = 'vaastuSarthi_lang';
+
+function loadLang(){
+  return localStorage.getItem(LS_KEY_LANG) || 'English';
+}
+
+// init settings on load
+langSelect.value = loadLang();
+
+// ---------- SETTINGS PANEL TOGGLE ----------
+settingsToggle.addEventListener('click', () => {
+  settingsPanel.classList.toggle('open');
+});
+
+langSelect.addEventListener('change', () => {
+  localStorage.setItem(LS_KEY_LANG, langSelect.value);
+});
+
+// ---------- CHAT HELPERS ----------
+function scrollToBottom(){
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function formatMarkdown(text){
+  let escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+
+  const lines = escaped.split('\n');
+  let html = '';
+  let inList = false;
+  for(const line of lines){
+    const trimmed = line.trim();
+    if(/^[-*]\s+/.test(trimmed)){
+      if(!inList){ html += '<ul style="margin:6px 0 6px 18px; padding:0;">'; inList = true; }
+      html += `<li>${trimmed.replace(/^[-*]\s+/, '')}</li>`;
+    } else {
+      if(inList){ html += '</ul>'; inList = false; }
+      if(trimmed.length){
+        html += `<div>${trimmed}</div>`;
+      } else {
+        html += '<div style="height:6px;"></div>';
+      }
+    }
+  }
+  if(inList) html += '</ul>';
+  return html;
+}
+
+function addMessage(role, text){
+  if(welcomeCard) welcomeCard.remove();
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  if(role === 'ai'){
+    div.innerHTML = formatMarkdown(text);
+  } else {
+    div.textContent = text;
+  }
+  chatArea.appendChild(div);
+  scrollToBottom();
+  return div;
+}
+
+function addLoadingIndicator(){
+  const div = document.createElement('div');
+  div.className = 'loading-dots';
+  div.id = 'loadingDots';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  chatArea.appendChild(div);
+  scrollToBottom();
+}
+function removeLoadingIndicator(){
+  const el = document.getElementById('loadingDots');
+  if(el) el.remove();
+}
+
+// ---------- CHAR COUNTER + AUTOSIZE ----------
+userInput.addEventListener('input', () => {
+  charCounter.textContent = `${userInput.value.length} / 800`;
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+});
+
+userInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && !e.shiftKey){
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+sendBtn.addEventListener('click', handleSend);
+
+// Attach events to dynamic chips
+function setupChipEvents(container) {
+  container.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      userInput.value = chip.getAttribute('data-q');
+      charCounter.textContent = `${userInput.value.length} / 800`;
+      handleSend();
+    });
+  });
+}
+
+setupChipEvents(document);
+
+clearChatBtn.addEventListener('click', () => {
+  chatArea.innerHTML = '';
+  const clone = document.createElement('div');
+  clone.className = 'welcome-card';
+  clone.id = 'welcomeCard';
+  clone.innerHTML = `
+      <h2>🕉 Namaste! Ask me anything about Vaastu Shastra</h2>
+      <p>Homes, offices, factories, construction, furniture placement, and remedies for doshas — I'm here to help.</p>
+      <div class="chips">
+        <div class="chip" data-q="Which direction should my main entrance face?">Main entrance direction?</div>
+        <div class="chip" data-q="What is the best placement for the kitchen in a house?">Best kitchen placement?</div>
+        <div class="chip" data-q="What is the remedy for a toilet located in the north-east corner?">Remedy for NE toilet?</div>
+        <div class="chip" data-q="Where should the pooja room be located in a home?">Pooja room placement?</div>
+        <div class="chip" data-q="What is the ideal direction for a study table or work desk?">Study table direction?</div>
+      </div>`;
+  chatArea.appendChild(clone);
+  setupChipEvents(clone);
+});
+
+// ---------- SEND / API CALL ----------
+async function handleSend(){
+  const question = userInput.value.trim();
+  if(!question) return;
+
+  addMessage('user', question);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  charCounter.textContent = '0 / 800';
+  sendBtn.disabled = true;
+
+  addLoadingIndicator();
+  const lang = loadLang();
+
+  try{
+    const responseText = await fetchFromProxy(question, lang);
+    removeLoadingIndicator();
+    addMessage('ai', responseText);
+  } catch(err){
+    removeLoadingIndicator();
+    addMessage('error', friendlyErrorMessage(err));
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+function friendlyErrorMessage(err){
+  const msg = (err && err.message) ? err.message : String(err);
+  if(msg.includes('NetworkError') || msg.includes('Failed to fetch')){
+    return '⚠ Could not connect to the proxy server. Please ensure the backend server is running on Render.';
+  }
+  return '⚠ Something went wrong while contacting the Vaastu advisor. Please try again.';
+}
+
+async function fetchFromProxy(question, lang){
+  const response = await fetch(BACKEND_API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, language: lang })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Server error');
+  }
+
+  return data.text;
+}
+</script>
+</body>
+</html>
