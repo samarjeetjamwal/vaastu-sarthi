@@ -62,7 +62,7 @@ html,body{
   padding:0 12px;
 }
 
-/* HEADER STYLE WITH INTEGRATED PERSISTENT BACK ACTION */
+/* HEADER STYLE WITH INTEGRATED LANGUAGE SELECTOR AND BACK ACTION */
 header{
   padding:20px 10px 14px;
   text-align:center;
@@ -70,10 +70,13 @@ header{
   border-bottom:2px solid var(--gold);
   background:linear-gradient(180deg, rgba(139,0,0,0.35), transparent);
 }
-.header-nav-left {
+.header-controls {
   position: absolute;
-  top: 24px;
+  top: 20px;
   left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .back-nav-btn {
   background: rgba(26, 26, 26, 0.8);
@@ -87,12 +90,25 @@ header{
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 4px;
 }
 .back-nav-btn:hover {
   background: var(--red-bright);
   color: #fff;
   border-color: #fff;
+}
+.header-lang-dropdown {
+  background: rgba(26, 26, 26, 0.9);
+  border: 1px solid var(--gold);
+  color: var(--offwhite);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+.header-lang-dropdown:focus {
+  border-color: var(--gold-bright);
 }
 .compass{
   width:64px;
@@ -114,11 +130,6 @@ header p.tagline{
   font-size:13px;
   color:#e8d9b5;
   opacity:0.85;
-}
-
-/* SETTINGS ELEMENT HIDDEN TOTALLY FROM SCREEN DISPLAY RENDERING */
-.settings-panel-invisible {
-  display: none !important;
 }
 
 /* CHAT SYSTEM DISPLAY */
@@ -287,10 +298,11 @@ footer{
   padding:10px 14px 16px;
 }
 
-@media (max-width:600px){
-  header h1{ font-size:22px; }
+@media (max-width:768px){
+  header h1{ font-size:20px; margin-top: 35px; }
+  header p.tagline { font-size: 11px; }
+  .header-controls { position: relative; top: 0; left: 0; justify-content: center; margin-bottom: 10px; }
   .msg{ max-width:90%; }
-  .back-nav-btn { padding: 4px 10px; font-size: 11px; }
 }
 </style>
 </head>
@@ -302,8 +314,41 @@ footer{
 
   <!-- ===================== HEADER AREA ===================== -->
   <header>
-    <div class="header-nav-left">
+    <div class="header-controls">
       <button class="back-nav-btn" id="headerBackBtn" title="Reset View">⬅ Back</button>
+      <select id="langSelect" class="header-lang-dropdown">
+        <!-- Indian Regional Languages -->
+        <option value="English" selected>English</option>
+        <option value="Hindi">Hindi (हिन्दी)</option>
+        <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+        <option value="Bengali">Bengali (বাংলা)</option>
+        <option value="Tamil">Tamil (தமிழ்)</option>
+        <option value="Telugu">Telugu (తెలుగు)</option>
+        <option value="Marathi">Marathi (मराठी)</option>
+        <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+        <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
+        <option value="Malayalam">Malayalam (മലയാളം)</option>
+        <option value="Urdu">Urdu (اردو)</option>
+        <option value="Odia">Odia (ଓଡ଼ିଆ)</option>
+        <!-- Global International Languages -->
+        <option value="Spanish">Spanish (Español)</option>
+        <option value="French">French (Français)</option>
+        <option value="Arabic">Arabic (العربية)</option>
+        <option value="German">German (Deutsch)</option>
+        <option value="Mandarin Chinese">Chinese (中文)</option>
+        <option value="Japanese">Japanese (日本語)</option>
+        <option value="Portuguese">Portuguese (Português)</option>
+        <option value="Russian">Russian (Русский)</option>
+        <option value="Italian">Italian (Italiano)</option>
+        <option value="Korean">Korean (한국어)</option>
+        <option value="Turkish">Turkish (Türkçe)</option>
+        <option value="Dutch">Dutch (Nederlands)</option>
+        <option value="Vietnamese">Vietnamese (Tiếng Việt)</option>
+        <option value="Polish">Polish (Polski)</option>
+        <option value="Thai">Thai (ภาษาไทย)</option>
+        <option value="Indonesian">Indonesian (Bahasa)</option>
+        <option value="Persian">Persian (فارسی)</option>
+      </select>
     </div>
     <div class="compass">
       <svg viewBox="0 0 100 100">
@@ -325,13 +370,6 @@ footer{
     <h1>Vaastu Sarthi</h1>
     <p class="tagline">Your guide through directions, elements & harmony</p>
   </header>
-
-  <!-- ===================== INVISIBLE BACKGROUND CHANNELS ===================== -->
-  <div class="settings-panel-invisible">
-    <select id="langSelect">
-      <option value="English" selected>English</option>
-    </select>
-  </div>
 
   <!-- ===================== ACTIVE WORKSPACE AREA ===================== -->
   <div class="chat-area" id="chatArea">
@@ -370,7 +408,7 @@ footer{
    ============================================================ */
 
 // PASTE YOUR LIVE CLOUDFLARE WORKER ROUTE URL HERE EXCLUSIVELY
-const BACKEND_API_URL = "https://vaastu-sarthi-api.samarjeetjamwal.workers.dev";
+const BACKEND_API_URL = "https://vaastu-sarthi-api.samarjeetjamwal.workers.dev/";
 
 const chatArea = document.getElementById('chatArea');
 const welcomeCard = document.getElementById('welcomeCard');
@@ -379,11 +417,20 @@ const sendBtn = document.getElementById('sendBtn');
 const clearChatBtn = document.getElementById('clearChatBtn');
 const charCounter = document.getElementById('charCounter');
 const headerBackBtn = document.getElementById('headerBackBtn');
+const langSelect = document.getElementById('langSelect');
 
-// Language processing functions dynamically detect context automatically
-function getSystemDisplayLanguage() {
-  return "English"; 
+const LS_KEY_LANG = 'vaastuSarthi_lang';
+
+function loadLang(){
+  return localStorage.getItem(LS_KEY_LANG) || 'English';
 }
+
+// Initializing saved selector values on load
+langSelect.value = loadLang();
+
+langSelect.addEventListener('change', () => {
+  localStorage.setItem(LS_KEY_LANG, langSelect.value);
+});
 
 function scrollToBottom(){
   chatArea.scrollTop = chatArea.scrollHeight;
@@ -421,6 +468,9 @@ function addMessage(role, text){
   div.className = `msg ${role}`;
   if(role === 'ai'){
     div.innerHTML = formatMarkdown(text);
+  } else if(role === 'error'){
+    div.className = 'msg error';
+    div.textContent = text;
   } else {
     div.textContent = text;
   }
@@ -443,7 +493,6 @@ function removeLoadingIndicator(){
   if(el) el.remove();
 }
 
-// PERSISTENT BACK ACTION NAVIGATION ROUTING TRIGGER
 function resetInterfaceState() {
   chatArea.innerHTML = '';
   const clone = document.createElement('div');
@@ -506,7 +555,7 @@ async function handleSend(){
   sendBtn.disabled = true;
 
   addLoadingIndicator();
-  const activeLang = getSystemDisplayLanguage();
+  const activeLang = langSelect.value;
 
   try{
     const responseText = await fetchFromEdgeWorker(question, activeLang);
@@ -514,7 +563,7 @@ async function handleSend(){
     addMessage('ai', responseText);
   } catch(err){
     removeLoadingIndicator();
-    addMessage('error', '⚠ Something went wrong while contacting the Vaastu advisor. Please try again.');
+    addMessage('error', `⚠ ${err.message || 'Something went wrong while contacting the Vaastu advisor. Please try again.'}`);
     console.error(err);
   } finally {
     sendBtn.disabled = false;
@@ -522,11 +571,16 @@ async function handleSend(){
 }
 
 async function fetchFromEdgeWorker(question, lang){
-  const response = await fetch(BACKEND_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, language: lang })
-  });
+  let response;
+  try {
+    response = await fetch(BACKEND_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, language: lang })
+    });
+  } catch(networkError) {
+    throw new Error("Network error — please check your internet connection.");
+  }
 
   const data = await response.json();
   if (!response.ok) {
