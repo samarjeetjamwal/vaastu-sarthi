@@ -62,7 +62,6 @@ html,body{
   padding:0 12px;
 }
 
-/* HEADER STYLE WITH INTEGRATED LANGUAGE SELECTOR AND BACK ACTION */
 header{
   padding:20px 10px 14px;
   text-align:center;
@@ -132,7 +131,6 @@ header p.tagline{
   opacity:0.85;
 }
 
-/* CHAT SYSTEM DISPLAY */
 .chat-area{
   flex:1;
   overflow-y:auto;
@@ -236,6 +234,70 @@ header p.tagline{
   40%{ transform:scale(1); opacity:1; }
 }
 
+/* MANUAL PAYMENT GATE STYLING */
+.pay-card {
+  align-self: center;
+  background: linear-gradient(135deg, #2c1212 0%, #150808 100%);
+  border: 2px dashed var(--gold);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  animation: fadeIn 0.4s ease;
+  margin: 15px 0;
+}
+.pay-card h3 {
+  color: var(--gold-bright);
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+.pay-price {
+  font-size: 28px;
+  color: #fff;
+  font-weight: 700;
+  margin: 10px 0;
+}
+.pay-price span { color: var(--gold-bright); }
+.pay-details {
+  background: rgba(0,0,0,0.4);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(214,175,55,0.2);
+  font-family: monospace;
+  font-size: 16px;
+  color: #fff;
+  margin: 10px 0;
+  letter-spacing: 0.5px;
+}
+.pay-input-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+.pay-input {
+  flex: 1;
+  background: #0d0d0d;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.pay-input:focus { outline: none; border-color: var(--gold-bright); }
+.verify-btn {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.verify-btn:hover { background: var(--gold-bright); }
+
 .input-bar{
   display:flex;
   gap:8px;
@@ -317,7 +379,6 @@ footer{
     <div class="header-controls">
       <button class="back-nav-btn" id="headerBackBtn" title="Reset View">⬅ Back</button>
       <select id="langSelect" class="header-lang-dropdown">
-        <!-- Indian Regional Languages -->
         <option value="English" selected>English</option>
         <option value="Hindi">Hindi (हिन्दी)</option>
         <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
@@ -327,10 +388,9 @@ footer{
         <option value="Marathi">Marathi (मराठी)</option>
         <option value="Gujarati">Gujarati (ગુજરાતી)</option>
         <option value="Kannada">Kannada (ಕನ್ನಡ)</option>
-        <option value="Malayalam">Malayalam (മലയാളം)</option>
+        <option value="Malayalam">Malayalam (മലയാളם)</option>
         <option value="Urdu">Urdu (اردو)</option>
         <option value="Odia">Odia (ଓଡ଼ିଆ)</option>
-        <!-- Global International Languages -->
         <option value="Spanish">Spanish (Español)</option>
         <option value="French">French (Français)</option>
         <option value="Arabic">Arabic (العربية)</option>
@@ -407,8 +467,14 @@ footer{
    VAASTU SARTHI — RUNTIME BUSINESS LOGIC
    ============================================================ */
 
-// PASTE YOUR LIVE CLOUDFLARE WORKER ROUTE URL HERE EXCLUSIVELY
 const BACKEND_API_URL = "https://vaastu-sarthi-api.samarjeetjamwal.workers.dev";
+
+// CONFIGURATION 1: Put your real phone number here for users to send money
+const GPAY_MOBILE_NUMBER = "9317950702"; 
+
+// CONFIGURATION 2: Choose a secret key you want to give them upon verifying payment.
+// Keep it UPPERCASE. You can change this code anytime!
+const SECRET_UNLOCK_PASSCODE = "VAAST2222"; 
 
 const chatArea = document.getElementById('chatArea');
 const welcomeCard = document.getElementById('welcomeCard');
@@ -420,14 +486,28 @@ const headerBackBtn = document.getElementById('headerBackBtn');
 const langSelect = document.getElementById('langSelect');
 
 const LS_KEY_LANG = 'vaastuSarthi_lang';
+const LS_KEY_COUNT = 'vaastuSarthi_msgCount';
 
 function loadLang(){
   return localStorage.getItem(LS_KEY_LANG) || 'English';
 }
 
-// Initializing saved selector values on load
-langSelect.value = loadLang();
+function getMessageCount(){
+  return parseInt(localStorage.getItem(LS_KEY_COUNT) || '0', 10);
+}
 
+function incrementMessageCount(){
+  localStorage.setItem(LS_KEY_COUNT, getMessageCount() + 1);
+}
+
+function resetMessageCountLimit(){
+  const current = getMessageCount();
+  if(current > 0) {
+    localStorage.setItem(LS_KEY_COUNT, current - 1);
+  }
+}
+
+langSelect.value = loadLang();
 langSelect.addEventListener('change', () => {
   localStorage.setItem(LS_KEY_LANG, langSelect.value);
 });
@@ -493,6 +573,59 @@ function removeLoadingIndicator(){
   if(el) el.remove();
 }
 
+// Spawns the clean mobile payment window
+function showPaymentPrompt(){
+  removeLoadingIndicator();
+  if(document.getElementById('payCardElement')) {
+    document.getElementById('payCardElement').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
+  const payCard = document.createElement('div');
+  payCard.className = 'pay-card';
+  payCard.id = 'payCardElement';
+  
+  payCard.innerHTML = `
+    <h3>Premium Token Required</h3>
+    <p style="font-size:13px; color:#e8d9b5; margin:0 0 4px;">Your initial consultation has completed.</p>
+    <div class="pay-price">₹20 <span>/ Query</span></div>
+    <p style="font-size:13px; margin:10px 0 5px;">Pay via GPay / PhonePe / UPI to Mobile:</p>
+    <div class="pay-details">${GPAY_MOBILE_NUMBER}</div>
+    <p style="font-size:12.5px; color:#b3a37e; margin:10px 0 12px;">Share your transaction screenshot or reference ID with us to receive your secure <b>Unlock Passcode</b>.</p>
+    <div class="pay-input-group">
+      <input type="text" id="passcodeInput" class="pay-input" placeholder="Enter Unlock Passcode" autocomplete="off">
+      <button id="verifyPasscodeBtn" class="verify-btn">Unlock</button>
+    </div>
+    <div id="payError" style="color:#ffb3b3; font-size:12px; margin-top:8px; display:none;"></div>
+  `;
+
+  chatArea.appendChild(payCard);
+  scrollToBottom();
+
+  document.getElementById('verifyPasscodeBtn').addEventListener('click', () => {
+    const enteredCode = document.getElementById('passcodeInput').value.trim().toUpperCase();
+    const errorEl = document.getElementById('payError');
+    
+    if(enteredCode !== SECRET_UNLOCK_PASSCODE.toUpperCase()) {
+      errorEl.textContent = "⚠ Invalid passcode. Please check your shared token string.";
+      errorEl.style.display = "block";
+      return;
+    }
+    
+    errorEl.style.display = "none";
+    payCard.innerHTML = `<h3 style="color:#4CAF50;">✓ Code Verified!</h3><p style="font-size:13px; color:#e8d9b5; margin:4px 0 0;">Your next question token is unlocked.</p>`;
+    
+    resetMessageCountLimit();
+    
+    setTimeout(() => {
+      payCard.remove();
+      userInput.disabled = false;
+      userInput.placeholder = "Ask about entrance direction, room placement, remedies...";
+      sendBtn.disabled = false;
+    }, 2000);
+  });
+}
+
 function resetInterfaceState() {
   chatArea.innerHTML = '';
   const clone = document.createElement('div');
@@ -511,6 +644,9 @@ function resetInterfaceState() {
   chatArea.appendChild(clone);
   setupChipEvents(clone);
   userInput.value = '';
+  userInput.disabled = false;
+  userInput.placeholder = "Ask about entrance direction, room placement, remedies... ";
+  sendBtn.disabled = false;
   charCounter.textContent = '0 / 800';
   userInput.style.height = 'auto';
 }
@@ -536,6 +672,10 @@ sendBtn.addEventListener('click', handleSend);
 function setupChipEvents(container) {
   container.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
+      if(userInput.disabled) {
+        showPaymentPrompt();
+        return;
+      }
       userInput.value = chip.getAttribute('data-q');
       charCounter.textContent = `${userInput.value.length} / 800`;
       handleSend();
@@ -547,6 +687,15 @@ setupChipEvents(document);
 async function handleSend(){
   const question = userInput.value.trim();
   if(!question) return;
+
+  if (getMessageCount() >= 1) {
+    userInput.disabled = true;
+    userInput.value = question;
+    userInput.placeholder = "Payment required to unlock more questions.";
+    sendBtn.disabled = true;
+    showPaymentPrompt();
+    return;
+  }
 
   addMessage('user', question);
   userInput.value = '';
@@ -561,11 +710,19 @@ async function handleSend(){
     const responseText = await fetchFromEdgeWorker(question, activeLang);
     removeLoadingIndicator();
     addMessage('ai', responseText);
+    
+    incrementMessageCount();
+    
+    if(getMessageCount() >= 1) {
+       userInput.disabled = true;
+       userInput.placeholder = "Payment required to unlock more questions.";
+       sendBtn.disabled = true;
+       showPaymentPrompt();
+    }
   } catch(err){
     removeLoadingIndicator();
     addMessage('error', `⚠ ${err.message || 'Something went wrong while contacting the Vaastu advisor. Please try again.'}`);
     console.error(err);
-  } finally {
     sendBtn.disabled = false;
   }
 }
